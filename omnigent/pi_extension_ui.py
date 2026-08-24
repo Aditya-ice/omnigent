@@ -24,9 +24,6 @@ FIRE_AND_FORGET_METHODS: frozenset[str] = frozenset(
 POLICY_NAME = "pi_native_extension_ui"
 PHASE = "pi_extension_ui"
 
-# Dummy option so the AskUserQuestion parser does not drop a question with
-# no labels. The form always also renders a custom-input row.
-_INPUT_DUMMY_LABEL = "Enter text"
 _KEEP_AS_IS_LABEL = "Keep as-is"
 
 
@@ -57,7 +54,8 @@ def to_elicitation_params(req: dict[str, Any]) -> ElicitationRequestParams:
         ``timeout``), or the same shape synthesized by the pi-native wrap.
     :returns: Form-mode params. ``confirm`` is a binary card; ``select`` /
         ``input`` / ``editor`` stamp ``ask_user_question`` so the existing
-        form renders. Empty ``select`` options are treated as ``input``.
+        form renders. Empty ``select`` options are treated as ``input``
+        (custom-row only — no dummy radio).
     :raises ValueError: When ``method`` is not a dialog method.
     """
     method = req.get("method")
@@ -145,9 +143,10 @@ def _ask_user_question(req: dict[str, Any], method: object) -> dict[str, Any]:
         options = [option]
         header = "Editor"
     else:
-        placeholder = _nonempty_str(req.get("placeholder"))
-        options = [{"label": placeholder or _INPUT_DUMMY_LABEL}]
-        header = placeholder or "Input"
+        # Custom-row only. A dummy radio (placeholder / "Enter text") was
+        # selectable and submitted as the Pi value without the user typing.
+        options = []
+        header = _nonempty_str(req.get("placeholder")) or "Input"
     question: dict[str, Any] = {
         "id": "0",
         "question": title,

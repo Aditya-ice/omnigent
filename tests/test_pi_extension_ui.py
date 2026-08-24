@@ -119,17 +119,24 @@ class TestToElicitationParamsSelect:
         params = to_elicitation_params(_EMPTY_SELECT)
         extra = params.model_extra or {}
         question = extra["ask_user_question"]["questions"][0]
-        assert question["options"]
+        assert question["options"] == []
         assert question["header"] == "Input"
 
 
 class TestToElicitationParamsInputEditor:
-    def test_input_keeps_usable_options(self) -> None:
+    def test_input_has_no_dummy_option(self) -> None:
         params = to_elicitation_params(_INPUT)
         extra = params.model_extra or {}
         question = extra["ask_user_question"]["questions"][0]
-        assert question["options"]
+        assert question["options"] == []
         assert question["header"] == "type something..."
+
+    def test_input_without_placeholder_uses_input_header(self) -> None:
+        params = to_elicitation_params({"id": "uuid-3", "method": "input", "title": "Name?"})
+        extra = params.model_extra or {}
+        question = extra["ask_user_question"]["questions"][0]
+        assert question["options"] == []
+        assert question["header"] == "Input"
 
     def test_editor_keep_as_is_option(self) -> None:
         params = to_elicitation_params(_EDITOR)
