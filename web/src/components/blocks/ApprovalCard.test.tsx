@@ -775,6 +775,34 @@ describe("ApprovalCard — AskUserQuestion form (parsed from content_preview)", 
     expect(screen.queryByText("Claude has questions")).toBeNull();
   });
 
+  it("labels Pi structured input prompts as Pi prompts", () => {
+    render(
+      <ApprovalCard
+        elicitationId="elic_pi_label"
+        message="Allow dangerous command?"
+        phase="pi_extension_ui"
+        policyName="pi_native_extension_ui"
+        contentPreview=""
+        requestedSchema={{}}
+        status="pending"
+        response={null}
+        askUserQuestion={{
+          questions: [
+            {
+              id: "0",
+              question: "Allow dangerous command?",
+              options: [{ label: "Allow" }, { label: "Block" }],
+              multiSelect: false,
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Pi needs your input")).toBeDefined();
+    expect(screen.queryByText("Claude has questions")).toBeNull();
+  });
+
   it("submits multi-select answers as an array", () => {
     const submitSpy = vi.fn().mockResolvedValue(undefined);
     useChatStore.setState({ submitApproval: submitSpy } as Partial<
