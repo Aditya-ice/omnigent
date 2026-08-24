@@ -113,6 +113,7 @@ class TestToElicitationParamsSelect:
         assert question["id"] == "0"
         assert question["question"] == "Allow dangerous command?"
         assert question["multiSelect"] is False
+        assert question["isOther"] is False
         assert [opt["label"] for opt in question["options"]] == ["Allow", "Block"]
 
     def test_empty_options_become_input(self) -> None:
@@ -121,6 +122,7 @@ class TestToElicitationParamsSelect:
         question = extra["ask_user_question"]["questions"][0]
         assert question["options"] == []
         assert question["header"] == "Input"
+        assert question["isOther"] is True
 
 
 class TestToElicitationParamsInputEditor:
@@ -130,6 +132,7 @@ class TestToElicitationParamsInputEditor:
         question = extra["ask_user_question"]["questions"][0]
         assert question["options"] == []
         assert question["header"] == "type something..."
+        assert question["isOther"] is True
 
     def test_input_without_placeholder_uses_input_header(self) -> None:
         params = to_elicitation_params({"id": "uuid-3", "method": "input", "title": "Name?"})
@@ -137,6 +140,7 @@ class TestToElicitationParamsInputEditor:
         question = extra["ask_user_question"]["questions"][0]
         assert question["options"] == []
         assert question["header"] == "Input"
+        assert question["isOther"] is True
 
     def test_editor_keep_as_is_option(self) -> None:
         params = to_elicitation_params(_EDITOR)
@@ -144,6 +148,7 @@ class TestToElicitationParamsInputEditor:
         question = extra["ask_user_question"]["questions"][0]
         assert question["options"][0]["label"] == "Keep as-is"
         assert question["options"][0]["preview"] == "Line 1\nLine 2"
+        assert question["isOther"] is True
 
 
 class TestToUiResponse:

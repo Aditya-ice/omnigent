@@ -152,6 +152,9 @@ def _ask_user_question(req: dict[str, Any], method: object) -> dict[str, Any]:
         "question": title,
         "options": options,
         "multiSelect": False,
+        # Pi ``select`` only accepts one of its supplied labels. Input,
+        # editor, and an empty select still need the form's custom row.
+        "isOther": not bool(option_labels),
     }
     if header:
         question["header"] = header
