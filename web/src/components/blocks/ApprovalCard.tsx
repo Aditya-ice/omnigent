@@ -472,7 +472,7 @@ export function ApprovalCard({
                 )}
               </>
             ) : showGatingMessage ? (
-              <span>{message}</span>
+              <span className="whitespace-pre-line">{message}</span>
             ) : null}
             {submittedAnswers !== null && (
               <ul className="flex flex-col gap-0.5">
@@ -562,7 +562,7 @@ export function ApprovalCard({
           </>
         ) : (
           <>
-            <span>{message}</span>
+            <span className="whitespace-pre-line">{message}</span>
             {formattedPreview && (
               <pre className="max-h-64 overflow-y-auto rounded bg-muted px-2 py-1 font-mono text-sm whitespace-pre-wrap break-words">
                 {formattedPreview}
