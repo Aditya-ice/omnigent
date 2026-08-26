@@ -569,6 +569,60 @@ async function testTuiWrapReparksSameElicitationId() {
   assert("re-park used the same elicitation id", ids.length === 2 && ids[0] === ids[1], JSON.stringify(ids));
 }
 
+async function testEmptyReparkBacksOff() {
+  // An immediately-empty 200 (consumed tombstone, a proxy ending the long
+  // poll) must not hot-loop: the re-attach sleeps before re-POSTing.
+  const h = makeHarness({ captureEvents: true });
+  let n = 0;
+  global.fetch = async (url) => {
+    const u = String(url);
+    if (u.includes("pi-extension-ui") || u.includes("/hook/pi/")) {
+      n += 1;
+      if (n === 1) return { ok: true, status: 200, text: async () => "" };
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ action: "accept", content: {} }),
+      };
+    }
+    return { ok: true, status: 204, text: async () => "" };
+  };
+  const { ui } = mockUi();
+  const ctx = { mode: "tui", ui };
+  await h.handlers.session_start({}, ctx);
+  const started = Date.now();
+  await ctx.ui.confirm("Proceed?", "Really?");
+  const elapsed = Date.now() - started;
+  assert("empty 200 re-park slept before retrying", elapsed >= 900, `elapsed=${elapsed}ms`);
+}
+
+async function testEditorHonoursOpts() {
+  // editor takes opts like confirm/select/input; an already-aborted signal
+  // short-circuits before any park POST.
+  const h = makeHarness({ captureEvents: true });
+  const hookCalls = [];
+  global.fetch = async (url, opts) => {
+    const u = String(url);
+    if (u.includes("pi-extension-ui") || u.includes("/hook/pi/")) {
+      hookCalls.push(u);
+      return {
+        ok: true,
+        status: 200,
+        text: async () => JSON.stringify({ action: "accept", content: {} }),
+      };
+    }
+    return { ok: true, status: 204, text: async () => "" };
+  };
+  const { ui } = mockUi();
+  const ctx = { mode: "tui", ui };
+  await h.handlers.session_start({}, ctx);
+  const controller = new AbortController();
+  controller.abort();
+  const value = await ctx.ui.editor("Notes", "prefill", { signal: controller.signal });
+  assert("aborted editor returns undefined", value === undefined, `value=${value}`);
+  assert("aborted editor posted no park", hookCalls.length === 0, JSON.stringify(hookCalls));
+}
+
 async function testRpcModeDoesNotWrapUi() {
   const h = makeHarness({ captureEvents: true });
   global.fetch = async () => ({ ok: true, status: 204, text: async () => "" });
@@ -607,6 +661,8 @@ async function testNotifyAndSetStatusStayUnwrapped() {
     await testAgentStartClearsStaleWindow();
     await testTuiWrapParksConfirmWithoutCallingOriginal();
     await testTuiWrapReparksSameElicitationId();
+    await testEmptyReparkBacksOff();
+    await testEditorHonoursOpts();
     await testRpcModeDoesNotWrapUi();
     await testNotifyAndSetStatusStayUnwrapped();
   } finally {

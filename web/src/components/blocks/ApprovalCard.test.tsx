@@ -195,6 +195,27 @@ describe("ApprovalCard — binary approve/reject", () => {
       execpolicy_amendment: [".venv/bin/python", "-m", "pytest"],
     });
   });
+
+  it("keeps the blank line between a Pi confirm's title and message", () => {
+    // The Pi extension-UI mapper composes a confirm dialog as
+    // "title\n\nmessage"; HTML collapses that break unless the message
+    // renders with pre-line whitespace.
+    render(
+      <ApprovalCard
+        elicitationId="elic_pi_confirm_newline"
+        message={"Confirm production deploy\n\nReally deploy v2.4.0 to production right now?"}
+        phase="pi_extension_ui"
+        policyName="pi_native_extension_ui"
+        contentPreview=""
+        requestedSchema={{}}
+        status="pending"
+        response={null}
+      />,
+    );
+    const node = screen.getByText(/Confirm production deploy/);
+    expect(node.textContent).toContain("\n\n");
+    expect(node.className).toContain("whitespace-pre-line");
+  });
 });
 
 describe("ApprovalCard — accept & allow all edits", () => {
