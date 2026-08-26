@@ -252,8 +252,12 @@ async function parkPiExtensionUiHttp(config, request, opts) {
     }
     if (!text) {
       // Empty 200: timeout/disconnect. Re-attach with the same id.
+      if (Date.now() >= parkDeadline) return null;
       transientDeadline = Date.now() + _TRANSIENT_RETRY_BUDGET_MS;
       transientBackoff = _TRANSIENT_RETRY_INITIAL_BACKOFF_MS;
+      // A server that answers immediately (consumed tombstone, a proxy that
+      // ends the long poll) would otherwise spin here with no delay.
+      await sleep(_TRANSIENT_RETRY_INITIAL_BACKOFF_MS);
       continue;
     }
     let json;
@@ -293,9 +297,9 @@ function wrapExtensionUi(ctx, config) {
     const verdict = await parkPiExtensionUiHttp(config, request, opts);
     return extensionUiJsResult("input", verdict, request);
   };
-  ui.editor = async (title, prefill) => {
+  ui.editor = async (title, prefill, opts) => {
     const request = { method: "editor", title, prefill };
-    const verdict = await parkPiExtensionUiHttp(config, request);
+    const verdict = await parkPiExtensionUiHttp(config, request, opts);
     return extensionUiJsResult("editor", verdict, request);
   };
 }
